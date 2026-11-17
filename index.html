@@ -1,0 +1,684 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LineLab – Live odds, injuries & matchups</title>
+<style>
+  :root{--bg:#f3f5f9;--card:#fff;--ink:#111827;--muted:#6b7280;--line:#e5e7eb;--brand:#2563eb;--dark:#0b1220;--green:#16a34a;--red:#dc2626;--amber:#d97706}
+  *{box-sizing:border-box}
+  body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;background:var(--bg);color:var(--ink);padding-bottom:90px}
+  a{color:inherit;text-decoration:none} button{font:inherit;cursor:pointer}
+  header{background:var(--dark);color:#fff;position:sticky;top:0;z-index:20}
+  .bar{max-width:980px;margin:0 auto;padding:12px 16px 6px;display:flex;align-items:center;justify-content:space-between}
+  .logo{font-weight:800;font-size:20px;letter-spacing:-.3px}.logo span{color:#60a5fa}
+  .tag{font-size:12px;color:#9ca3af}
+  .tabs{max-width:980px;margin:0 auto;display:flex;gap:4px;overflow-x:auto;padding:4px 12px 10px;scrollbar-width:none}
+  .tabs::-webkit-scrollbar{display:none}
+  .tab{white-space:nowrap;padding:7px 13px;border-radius:999px;font-size:14px;font-weight:600;color:#cbd5e1;background:#1e293b}
+  .tab.on{background:#fff;color:var(--dark)}
+  main{max-width:980px;margin:0 auto;padding:16px}
+  h1{font-size:22px;margin:4px 0}
+  h2{font-size:16px;margin:0 0 10px}
+  h3{font-size:14px;margin:14px 0 6px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
+  .muted{color:var(--muted)} small{font-size:12px}
+  .toolbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:8px 0 14px}
+  .search{flex:1;min-width:200px;border:1px solid var(--line);border-radius:10px;padding:11px 12px;font-size:15px;background:#fff}
+  .stamp{font-size:12px;color:var(--muted);display:flex;align-items:center;gap:6px}
+  .btn-sm{border:1px solid var(--line);background:#fff;border-radius:8px;padding:6px 10px;font-size:13px;font-weight:600}
+  .grid{display:grid;grid-template-columns:1fr;gap:10px}
+  @media(min-width:700px){.grid{grid-template-columns:1fr 1fr}}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px;margin-bottom:12px}
+  .grid .card{margin-bottom:0}
+  .game{display:block;transition:box-shadow .15s,border-color .15s}
+  .game:hover{box-shadow:0 4px 16px rgba(0,0,0,.07);border-color:#cbd5e1}
+  .gtop{display:flex;justify-content:space-between;font-size:13px;margin-bottom:8px}
+  .live{color:var(--red);font-weight:700}
+  .trow,.thead{display:grid;grid-template-columns:38px 1fr 34px 56px 56px;align-items:center;gap:6px;padding:4px 0}
+  .thead{font-size:11px;color:var(--muted);text-transform:uppercase;padding:0}
+  .thead span:nth-child(n+3),.trow span:nth-child(n+3){text-align:right}
+  .tb{display:inline-flex;align-items:center;justify-content:center;width:36px;height:26px;border-radius:6px;color:#fff;font-size:11px;font-weight:800;letter-spacing:.02em}
+  .tb.sm{width:30px;height:22px;font-size:10px;vertical-align:middle}
+  .tn{font-weight:600;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .tn small{color:var(--muted);font-weight:400}
+  .ts{font-weight:800;font-size:16px}
+  .tl{font-size:13px;font-weight:600;background:#f1f5f9;border-radius:6px;padding:4px 0;text-align:center!important}
+  .trow.win .tn,.trow.win .ts{color:var(--green)}
+  .daylbl{font-weight:700;margin:18px 0 8px;font-size:15px}
+  .empty{text-align:center;padding:30px 16px}
+  .empty .ic{font-size:40px}
+  .welcome{background:#eff6ff;border:1px solid #bfdbfe;border-radius:12px;padding:12px 14px;margin-bottom:12px;font-size:14px;display:flex;gap:10px;align-items:flex-start;justify-content:space-between}
+  .welcome button{background:none;border:0;font-size:18px;color:var(--muted)}
+  .back{display:inline-block;color:var(--brand);font-weight:600;margin-bottom:10px}
+  .hero{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;text-align:center;gap:8px}
+  .hero .tb{width:56px;height:40px;font-size:15px;border-radius:10px}
+  .hero .nm{font-weight:700;margin-top:6px}
+  .hero .sc{font-size:34px;font-weight:800}
+  .hero .mid{font-size:14px;color:var(--muted);min-width:90px}
+  .meta{display:flex;flex-wrap:wrap;gap:6px 14px;justify-content:center;font-size:13px;color:var(--muted);margin-top:12px}
+  table{width:100%;border-collapse:collapse;font-size:14px}
+  th{font-size:11px;text-transform:uppercase;color:var(--muted);text-align:right;font-weight:600;padding:6px 4px}
+  th:first-child,td:first-child{text-align:left}
+  td{padding:8px 4px;border-top:1px solid var(--line);text-align:right}
+  td small.mv{display:block;color:var(--muted);font-weight:400}
+  .note{font-size:13px;background:#fffbeb;border:1px solid #fde68a;border-radius:8px;padding:8px 10px;margin-top:10px}
+  .prob{display:flex;height:12px;border-radius:99px;overflow:hidden;margin:8px 0 4px}
+  .prob div{height:100%}
+  .row{display:flex;justify-content:space-between;font-size:13px}
+  ul.take{margin:0;padding-left:18px;line-height:1.55;font-size:15px}
+  ul.take li{margin-bottom:6px}
+  .edge{font-weight:700;color:var(--green)} .edge.d{color:var(--brand)}
+  .form{display:flex;gap:4px;margin:4px 0 8px;flex-wrap:wrap}
+  .wl{width:26px;height:26px;border-radius:6px;display:inline-flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;color:#fff}
+  .wl.W{background:var(--green)} .wl.L{background:var(--red)} .wl.T,.wl.D,.wl.OTL{background:#9ca3af}
+  .flist{font-size:13px;color:var(--muted);line-height:1.6}
+  .inj{display:flex;justify-content:space-between;gap:8px;padding:7px 0;border-top:1px solid var(--line);font-size:14px}
+  .st{font-size:12px;font-weight:700;border-radius:6px;padding:2px 7px;white-space:nowrap;height:fit-content}
+  .st.out{background:#fee2e2;color:var(--red)} .st.q{background:#fef3c7;color:var(--amber)}
+  .news a{display:block;padding:10px 0;border-top:1px solid var(--line)}
+  .news a:first-of-type{border-top:0}
+  .news b{display:block;font-size:15px} .news span{font-size:13px;color:var(--muted)}
+  .two{display:grid;grid-template-columns:1fr;gap:12px}
+  @media(min-width:700px){.two{grid-template-columns:1fr 1fr}}
+  .askcta{display:flex;align-items:center;justify-content:space-between;gap:10px;background:#eff6ff;border-radius:10px;padding:10px 12px;margin-top:12px;font-size:14px}
+  .btn{border:0;background:var(--brand);color:#fff;border-radius:10px;padding:10px 14px;font-weight:700}
+  .spin{width:28px;height:28px;border:3px solid #dbeafe;border-top-color:var(--brand);border-radius:50%;animation:sp 1s linear infinite;margin:30px auto 10px}
+  @keyframes sp{to{transform:rotate(360deg)}}
+  .golf td:nth-child(2){text-align:left}
+  .match{padding:10px 0;border-top:1px solid var(--line)}
+  .match:first-child{border-top:0}
+  .pl{display:flex;justify-content:space-between;font-size:15px;padding:2px 0}
+  .pl.win{font-weight:700;color:var(--green)}
+  /* chat */
+  #askBtn{position:fixed;right:18px;bottom:18px;z-index:30;border:0;border-radius:999px;background:var(--brand);color:#fff;font-weight:700;padding:14px 20px;font-size:16px;box-shadow:0 6px 20px rgba(37,99,235,.4)}
+  #chat{position:fixed;right:18px;bottom:18px;width:390px;max-width:calc(100vw - 24px);height:600px;max-height:calc(100vh - 36px);background:#fff;border-radius:16px;box-shadow:0 12px 40px rgba(0,0,0,.25);z-index:40;display:none;flex-direction:column;overflow:hidden}
+  #chat.open{display:flex}
+  @media(max-width:600px){#chat{right:0;bottom:0;width:100vw;max-width:100vw;height:100%;max-height:100%;border-radius:0}}
+  .chead{background:var(--dark);color:#fff;padding:12px 14px;display:flex;justify-content:space-between;align-items:center}
+  .chead button{background:none;border:0;color:#fff;font-size:20px}
+  #cctx{font-size:12px;color:#93c5fd}
+  #cmsgs{flex:1;overflow-y:auto;padding:12px;display:flex;flex-direction:column;gap:8px;background:#f8fafc}
+  .msg{max-width:88%;padding:9px 12px;border-radius:12px;font-size:14px;line-height:1.5}
+  .msg.u{align-self:flex-end;background:var(--brand);color:#fff;border-bottom-right-radius:4px}
+  .msg.b{align-self:flex-start;background:#fff;border:1px solid var(--line);border-bottom-left-radius:4px}
+  .msg.b ul{margin:4px 0;padding-left:18px}
+  .msg.b a{color:var(--brand);font-weight:600}
+  .ctxline{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;margin-bottom:2px}
+  #csugg{display:flex;gap:6px;overflow-x:auto;padding:8px 10px;border-top:1px solid var(--line)}
+  #csugg button{white-space:nowrap;border:1px solid #bfdbfe;background:#eff6ff;color:var(--brand);border-radius:999px;padding:6px 11px;font-size:13px}
+  #cform{display:flex;gap:6px;padding:10px;border-top:1px solid var(--line)}
+  #cform input{flex:1;border:1px solid var(--line);border-radius:10px;padding:10px;font-size:15px}
+  .foot{font-size:12px;color:var(--muted);text-align:center;margin:24px 0}
+</style>
+</head>
+<body>
+<header>
+  <div class="bar"><a class="logo" href="#/nfl">Line<span>Lab</span></a><span class="tag">Live odds · injuries · matchups</span></div>
+  <nav class="tabs" id="tabs"></nav>
+</header>
+<main id="main"></main>
+<p class="foot">Live data from ESPN (odds supplied to ESPN by sportsbooks). For information and entertainment only, not betting advice.</p>
+
+<button id="askBtn" onclick="openChat()">💬 Ask</button>
+<div id="chat">
+  <div class="chead"><div><b>Game Assistant</b><div id="cctx"></div></div><button onclick="closeChat()" aria-label="Close">✕</button></div>
+  <div id="cmsgs"></div>
+  <div id="csugg"></div>
+  <form id="cform"><input id="chatInput" autocomplete="off" placeholder="Ask about odds, injuries, matchups…"><button class="btn">Send</button></form>
+</div>
+
+<script>
+// ================= Settings =================
+const BASE = 'https://site.api.espn.com/apis/site/v2/sports/';
+const SPORTS = [
+  {key:'nfl',   label:'NFL',            path:'football/nfl',                       type:'team'},
+  {key:'nba',   label:'NBA',            path:'basketball/nba',                     type:'team', prev:true},
+  {key:'nhl',   label:'NHL',            path:'hockey/nhl',                         type:'team', prev:true},
+  {key:'mlb',   label:'MLB',            path:'baseball/mlb',                       type:'team', prev:true},
+  {key:'wnba',  label:'WNBA',           path:'basketball/wnba',                    type:'team', prev:true},
+  {key:'ncaaf', label:'College Football',path:'football/college-football',        type:'team', groups:'80'},
+  {key:'ncaab', label:'College Hoops',  path:'basketball/mens-college-basketball', type:'team', groups:'50'},
+  {key:'pga',   label:'PGA',            path:'golf/pga',                           type:'golf'},
+  {key:'lpga',  label:'LPGA',           path:'golf/lpga',                          type:'golf'},
+  {key:'atp',   label:'ATP',            path:'tennis/atp',                         type:'tennis'},
+  {key:'wta',   label:'WTA',            path:'tennis/wta',                         type:'tennis'},
+  {key:'epl',   label:'Premier League', path:'soccer/eng.1',                       type:'team'},
+  {key:'mls',   label:'MLS',            path:'soccer/usa.1',                       type:'team'}
+];
+
+// ================= Helpers =================
+const cache = {}, sumCache = {}, h2hCache = {}, newsCache = {};
+let route = {sport:'nfl', gameId:null}, searchText = '', currentGame = null, chatLog = [];
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const spBy = k => SPORTS.find(s => s.key === k);
+const ymd = d => d.getFullYear() + String(d.getMonth()+1).padStart(2,'0') + String(d.getDate()).padStart(2,'0');
+const num = v => parseFloat(String(v ?? '').replace(/,/g,''));
+const signed = v => v == null || isNaN(v) ? null : (v > 0 ? '+' + v : String(v));
+const fmtML = v => v == null || v === '' ? null : signed(+v);
+function store(k, v){ try{ if(v === undefined) return localStorage.getItem(k); localStorage.setItem(k, v); }catch(e){ return null; } }
+
+async function getJSON(url){
+  const ctl = new AbortController(); const t = setTimeout(() => ctl.abort(), 12000);
+  try { const r = await fetch(url, {signal:ctl.signal}); if(!r.ok) throw new Error('HTTP ' + r.status); return await r.json(); }
+  finally { clearTimeout(t); }
+}
+function sameDay(a, b){ return a.toDateString() === b.toDateString(); }
+function dayLabel(d){
+  const t = new Date(), tm = new Date(); tm.setDate(t.getDate()+1);
+  if(sameDay(d,t)) return 'Today'; if(sameDay(d,tm)) return 'Tomorrow';
+  return d.toLocaleDateString([], {weekday:'long', month:'short', day:'numeric'});
+}
+const clock = d => d.toLocaleTimeString([], {hour:'numeric', minute:'2-digit'});
+const fmtTime = d => (['Today','Tomorrow'].includes(dayLabel(d)) ? dayLabel(d) : d.toLocaleDateString([], {weekday:'short', month:'numeric', day:'numeric'})) + ' · ' + clock(d);
+function ago(iso){ const m = Math.round((Date.now() - new Date(iso)) / 60000); if(isNaN(m)) return ''; if(m < 60) return m + 'm ago'; if(m < 1440) return Math.round(m/60) + 'h ago'; return Math.round(m/1440) + 'd ago'; }
+const loading = (t='Loading live data…') => `<div class="spin"></div><p class="muted" style="text-align:center">${t}</p>`;
+const errorBox = () => `<div class="card empty"><div class="ic">📡</div><p><b>Couldn't reach live data right now.</b></p><p class="muted">Check your connection and try again.</p><button class="btn" onclick="onRoute()">Try again</button></div>`;
+
+// ================= Data parsing =================
+function parseOdds(o){
+  if(!o) return null;
+  const strip = v => v == null ? null : String(v).replace(/^[ou]/,'');
+  const ps = o.pointSpread || {}, ml = o.moneyline || {}, tot = o.total || {};
+  const r = {
+    provider: o.provider?.displayName || o.provider?.name || 'Sportsbook', details: o.details,
+    ou: o.overUnder ?? strip(tot.over?.close?.line), ouOpen: strip(tot.over?.open?.line),
+    spHome: ps.home?.close?.line ?? null, spHomeOpen: ps.home?.open?.line ?? null,
+    spAway: ps.away?.close?.line ?? null, spAwayOpen: ps.away?.open?.line ?? null,
+    mlHome: ml.home?.close?.odds ?? fmtML(o.homeTeamOdds?.moneyLine), mlHomeOpen: ml.home?.open?.odds ?? null,
+    mlAway: ml.away?.close?.odds ?? fmtML(o.awayTeamOdds?.moneyLine), mlAwayOpen: ml.away?.open?.odds ?? null,
+    draw: o.drawOdds?.moneyLine != null ? fmtML(o.drawOdds.moneyLine) : (ml.draw?.close?.odds ?? null),
+    favHome: o.homeTeamOdds?.favorite, favAway: o.awayTeamOdds?.favorite
+  };
+  if(r.spHome == null && typeof o.spread === 'number'){ r.spHome = signed(o.spread); r.spAway = signed(-o.spread); }
+  if(!r.details && !r.spHome && !r.mlHome && !r.ou) return null;
+  return r;
+}
+function parseGame(e){
+  const c = e.competitions?.[0]; if(!c || !c.competitors) return null;
+  const side = h => { const x = c.competitors.find(t => t.homeAway === h); if(!x) return null; const t = x.team || {};
+    const rec = Array.isArray(x.records) ? x.records[0]?.summary : (Array.isArray(x.record) ? x.record[0]?.summary : '');
+    return {id:t.id, name:t.displayName || t.name || '', short:t.shortDisplayName || t.name || t.abbreviation || '', abbr:t.abbreviation || '',
+      color: t.color ? '#' + t.color : '#475569', record: rec || '', score: typeof x.score === 'object' ? x.score?.displayValue : x.score, winner: x.winner}; };
+  const home = side('home'), away = side('away'); if(!home || !away) return null;
+  const st = (e.status || c.status)?.type || {};
+  return {id:String(e.id), date:new Date(e.date || c.date), state:st.state, detail:st.shortDetail || st.detail || '', home, away,
+    odds: parseOdds(c.odds?.[0]), venue: c.venue?.fullName, tv: (c.broadcasts || []).flatMap(b => b.names || [b.media?.shortName]).filter(Boolean).join(', '),
+    season: e.season?.year};
+}
+
+async function loadSport(sp, force){
+  const c = cache[sp.key];
+  if(c && !force && Date.now() - c.at < 30000) return c;
+  let data;
+  if(sp.type === 'team'){
+    const g = sp.groups ? '&groups=' + sp.groups : '';
+    const urls = [BASE + sp.path + '/scoreboard' + (g ? '?' + g.slice(1) : '')];
+    for(let i = 0; i < 7; i++){ const d = new Date(); d.setDate(d.getDate() + i); urls.push(BASE + sp.path + '/scoreboard?dates=' + ymd(d) + '&limit=300' + g); }
+    const res = await Promise.allSettled(urls.map(getJSON));
+    const ok = res.filter(r => r.status === 'fulfilled').map(r => r.value);
+    if(!ok.length) throw new Error('offline');
+    const map = new Map();
+    ok.forEach(j => (j.events || []).forEach(e => { const gm = parseGame(e); if(gm) map.set(gm.id, gm); }));
+    data = {games:[...map.values()]};
+  } else {
+    const j = await getJSON(BASE + sp.path + '/scoreboard'); data = {events: j.events || []};
+  }
+  data.at = Date.now(); cache[sp.key] = data; return data;
+}
+const findCached = id => { for(const k in cache) for(const g of (cache[k].games || [])) if(g.id === id) return g; return null; };
+
+// ================= Tabs & routing =================
+function renderTabs(){
+  $('#tabs').innerHTML = SPORTS.map(s => `<a class="tab ${s.key === route.sport ? 'on' : ''}" href="#/${s.key}">${s.label}</a>`).join('');
+  const on = $('#tabs .on'); if(on) on.scrollIntoView({inline:'center', block:'nearest'});
+}
+function parseRoute(){ const p = location.hash.replace(/^#\/?/, '').split('/'); route = {sport: spBy(p[0]) ? p[0] : 'nfl', gameId: p[1] === 'g' ? p[2] : null}; }
+function onRoute(){
+  parseRoute(); renderTabs(); window.scrollTo(0,0);
+  const sp = spBy(route.sport);
+  if(route.gameId) renderGame(sp, route.gameId); else { searchText = ''; currentGame = null; renderList(sp); }
+  updateChatContext();
+}
+window.addEventListener('hashchange', onRoute);
+
+// ================= List screens =================
+function matchesSearch(strs){ const q = searchText.trim().toLowerCase(); return !q || strs.some(s => String(s || '').toLowerCase().includes(q)); }
+
+function gameCard(g, sp){
+  const o = g.odds, live = g.state === 'in';
+  const row = (t, home) => `<div class="trow ${g.state === 'post' && t.winner ? 'win' : ''}">
+      <span class="tb" style="background:${esc(t.color)}">${esc(t.abbr)}</span>
+      <span class="tn">${esc(t.short)} <small>${esc(t.record)}</small></span>
+      <span class="ts">${g.state === 'pre' ? '' : esc(t.score ?? '')}</span>
+      <span class="tl">${o ? esc((home ? o.spHome : o.spAway) ?? '–') : '–'}</span>
+      <span class="tl">${o ? esc((home ? o.mlHome : o.mlAway) ?? '–') : '–'}</span></div>`;
+  return `<a class="card game" href="#/${sp.key}/g/${g.id}">
+    <div class="gtop"><span class="${live ? 'live' : ''}">${live ? '● LIVE · ' + esc(g.detail) : esc(g.state === 'pre' ? fmtTime(g.date) : g.detail)}</span>
+    <span class="muted">${o && o.ou ? 'O/U ' + esc(o.ou) : ''}</span></div>
+    <div class="thead"><span></span><span></span><span></span><span>Spread</span><span>Money</span></div>
+    ${row(g.away, false)}${row(g.home, true)}</a>`;
+}
+
+function teamListBody(sp, data){
+  const games = data.games.filter(g => matchesSearch([g.home.name, g.away.name, g.home.abbr, g.away.abbr]));
+  const live = games.filter(g => g.state === 'in').sort((a,b) => a.date - b.date);
+  const up = games.filter(g => g.state === 'pre').sort((a,b) => a.date - b.date);
+  const cutoff = Date.now() - 3 * 864e5;
+  const recent = games.filter(g => g.state === 'post' && g.date >= cutoff).sort((a,b) => b.date - a.date).slice(0, 8);
+  let html = '';
+  if(live.length) html += `<div class="daylbl live">● Live now (${live.length})</div><div class="grid">${live.map(g => gameCard(g, sp)).join('')}</div>`;
+  const days = {}; up.forEach(g => (days[dayLabel(g.date)] ||= []).push(g));
+  for(const d in days) html += `<div class="daylbl">${d}</div><div class="grid">${days[d].map(g => gameCard(g, sp)).join('')}</div>`;
+  if(!live.length && !up.length){
+    html += searchText ? `<div class="card empty"><div class="ic">🔎</div><p>No ${sp.label} games match “${esc(searchText)}”.</p></div>`
+      : `<div class="card empty"><div class="ic">🗓️</div><p><b>No ${sp.label} games in the next 7 days.</b></p><p class="muted">The season is probably on a break. Try another sport above.</p></div>`;
+  }
+  if(recent.length) html += `<div class="daylbl">Recent results</div><div class="grid">${recent.map(g => gameCard(g, sp)).join('')}</div>`;
+  return html;
+}
+
+function golfBody(sp, data){
+  const e = data.events[0];
+  if(!e) return `<div class="card empty"><div class="ic">⛳</div><p><b>No ${sp.label} tournament this week.</b></p></div>`;
+  const c = e.competitions?.[0] || {}, state = e.status?.type?.state;
+  const players = (c.competitors || []).slice().sort((a,b) => (a.order || 999) - (b.order || 999))
+    .filter(x => matchesSearch([x.athlete?.displayName]));
+  const rows = players.slice(0, searchText ? 200 : 60).map((x, i) => {
+    const score = typeof x.score === 'object' ? x.score?.displayValue : x.score;
+    const rounds = (x.linescores || []).map(l => l.displayValue ?? l.value).filter(v => v != null && v !== '').join(' · ');
+    const pos = x.status?.position?.displayName || (state === 'pre' ? '–' : (x.order ?? i + 1));
+    return `<tr><td>${esc(pos)}</td><td>${esc(x.athlete?.displayName || 'TBD')}</td><td><b>${esc(state === 'pre' ? '–' : (score ?? '–'))}</b></td><td class="muted">${esc(rounds || x.status?.thru || '')}</td></tr>`;
+  }).join('');
+  const start = new Date(e.date), end = e.endDate ? new Date(e.endDate) : null;
+  return `<div class="card"><h2>${esc(e.name)}</h2>
+    <div class="muted" style="font-size:14px">${start.toLocaleDateString([], {month:'short', day:'numeric'})}${end ? ' – ' + end.toLocaleDateString([], {month:'short', day:'numeric'}) : ''} · ${esc(e.status?.type?.detail || e.status?.type?.description || '')} · ${(c.competitors || []).length} players</div></div>
+    <div class="card"><h2>${state === 'pre' ? 'Field' : 'Leaderboard'}</h2>
+    ${state === 'pre' ? '<p class="muted" style="font-size:14px">The tournament hasn\'t started yet. Scores show up here once round 1 begins.</p>' : ''}
+    <table class="golf"><tr><th>Pos</th><th style="text-align:left">Player</th><th>To par</th><th>Rounds</th></tr>${rows || '<tr><td colspan="4">No players match.</td></tr>'}</table></div>`;
+}
+
+function tennisMatches(data){
+  const out = [];
+  (data.events || []).forEach(e => (e.groupings || []).forEach(gr => (gr.competitions || []).forEach(m => {
+    const p = (m.competitors || []).map(x => ({name: x.athlete?.displayName || x.roster?.shortDisplayName || x.roster?.displayName || x.team?.displayName || 'TBD',
+      win: x.winner, sets: (x.linescores || []).map(l => l.value).join(' ')}));
+    out.push({event: e.name, group: gr.grouping?.displayName || '', round: m.round?.displayName || '', state: m.status?.type?.state, detail: m.status?.type?.shortDetail || m.status?.type?.detail || '', date: new Date(m.date || m.startDate || e.date), p});
+  })));
+  return out;
+}
+function tennisBody(sp, data){
+  const all = tennisMatches(data).filter(m => matchesSearch(m.p.map(x => x.name)));
+  if(!(data.events || []).length) return `<div class="card empty"><div class="ic">🎾</div><p><b>No ${sp.label} events right now.</b></p></div>`;
+  const live = all.filter(m => m.state === 'in'), up = all.filter(m => m.state === 'pre').sort((a,b) => a.date - b.date), done = all.filter(m => m.state === 'post').sort((a,b) => b.date - a.date).slice(0, 20);
+  const block = (title, list) => list.length ? `<div class="card"><h2>${title}</h2>${list.map(m => `<div class="match"><div class="row muted"><span>${esc(m.group)} · ${esc(m.round)}</span><span>${esc(m.state === 'pre' ? fmtTime(m.date) : m.detail)}</span></div>
+     ${m.p.map(x => `<div class="pl ${x.win ? 'win' : ''}"><span>${esc(x.name)}</span><span>${esc(x.sets)}</span></div>`).join('')}</div>`).join('')}</div>` : '';
+  const names = [...new Set((data.events || []).map(e => e.name))].join(' · ');
+  return `<div class="card"><h2>${esc(names)}</h2><div class="muted" style="font-size:14px">${all.length} matches</div></div>` +
+    (block('● Live now', live) + block('Upcoming', up) + block('Recent results', done) || `<div class="card empty"><p>No matches match “${esc(searchText)}”.</p></div>`);
+}
+
+function listBody(sp, data){ return sp.type === 'golf' ? golfBody(sp, data) : sp.type === 'tennis' ? tennisBody(sp, data) : teamListBody(sp, data); }
+
+async function renderList(sp, silent){
+  const main = $('#main');
+  if(!silent) main.innerHTML = loading();
+  let data;
+  try { data = await loadSport(sp, silent); } catch(e){ if(!silent) main.innerHTML = errorBox(); return; }
+  if(route.sport !== sp.key || route.gameId) return;
+  if(silent && $('#glist')){ $('#glist').innerHTML = listBody(sp, data); $('#stamp').textContent = 'Updated ' + clock(new Date()); return; }
+  const ph = sp.type === 'golf' || sp.type === 'tennis' ? 'Search players…' : 'Search teams (e.g. "Bears", "LAL")…';
+  const welcome = store('ll_welcome') ? '' : `<div class="welcome" id="welcome"><div>👋 <b>Welcome to LineLab.</b> Pick a sport above, tap any game for odds, injuries and matchup breakdowns, or tap <b>💬 Ask</b> to ask the assistant about a game.</div><button onclick="store('ll_welcome','1');this.parentNode.remove()" aria-label="Dismiss">✕</button></div>`;
+  main.innerHTML = `${welcome}<h1>${sp.label}</h1>
+    <div class="toolbar"><input class="search" id="search" placeholder='${ph}' value="${esc(searchText)}">
+    <span class="stamp"><span id="stamp">Updated ${clock(new Date())}</span><button class="btn-sm" onclick="refreshNow()">↻ Refresh</button></span></div>
+    <div id="glist">${listBody(sp, data)}</div><div id="news"></div>`;
+  $('#search').addEventListener('input', ev => { searchText = ev.target.value; $('#glist').innerHTML = listBody(sp, cache[sp.key]); });
+  loadNews(sp);
+}
+
+async function loadNews(sp){
+  try{
+    let n = newsCache[sp.key];
+    if(!n || Date.now() - n.at > 120000){ const j = await getJSON(BASE + sp.path + '/news?limit=6'); n = newsCache[sp.key] = {at: Date.now(), items: j.articles || []}; }
+    const el = $('#news'); if(!el || !n.items.length) return;
+    el.innerHTML = `<div class="card news" style="margin-top:16px"><h2>📰 Latest ${sp.label} news</h2>${n.items.map(a => `<a href="${esc(a.links?.web?.href || '#')}" target="_blank" rel="noopener"><b>${esc(a.headline)}</b><span>${esc(a.description || '')} · ${ago(a.published)}</span></a>`).join('')}</div>`;
+  }catch(e){}
+}
+function refreshNow(){ const sp = spBy(route.sport); if(route.gameId) renderGame(sp, route.gameId, true); else renderList(sp, true); }
+
+// ================= Game insights =================
+function insights(g, s){
+  const teamOf = t => !t ? null : String(t.id) === String(g.home.id) ? g.home : String(t.id) === String(g.away.id) ? g.away : null;
+  const inj = (s.injuries || []).map(t => ({team: teamOf(t.team) || {short: t.team?.displayName, abbr: t.team?.abbreviation, color:'#475569'},
+    list: (t.injuries || []).map(i => ({name: i.athlete?.displayName, pos: i.athlete?.position?.abbreviation || '', status: i.status || i.type?.description || '',
+      detail: [i.details?.type, i.details?.detail].filter(Boolean).join(' – '), ret: i.details?.returnDate}))}));
+  const form = (s.lastFiveGames || []).map(t => ({team: teamOf(t.team) || {short: t.team?.displayName, abbr: t.team?.abbreviation},
+    games: (t.events || []).map(e => ({res: e.gameResult, score: e.score, at: e.atVs, opp: e.opponent?.abbreviation || e.opponent?.displayName || ''}))}));
+  let pred = null;
+  if(s.predictor?.homeTeam){ const h = num(s.predictor.homeTeam.gameProjection), a = num(s.predictor.awayTeam?.gameProjection);
+    if(!isNaN(h)) pred = String(s.predictor.homeTeam.id) === String(g.away.id) ? {home: a, away: h} : {home: h, away: a}; }
+  const stats = {};
+  (s.boxscore?.teams || []).forEach(t => { const tm = teamOf(t.team); if(tm) stats[tm === g.home ? 'home' : 'away'] = Object.fromEntries((t.statistics || []).filter(x => x.label && x.displayValue != null).map(x => [x.label, x.displayValue])); });
+  const leaders = (s.leaders || []).map(t => ({team: teamOf(t.team), cats: (t.leaders || []).slice(0, 3).map(c => ({cat: c.displayName, who: c.leaders?.[0]?.athlete?.displayName, val: c.leaders?.[0]?.displayValue})).filter(c => c.who)}));
+  const series = (s.seasonseries || [])[0] || null;
+  const news = (s.news?.articles || []).slice(0, 5).map(a => ({h: a.headline, d: a.description, url: a.links?.web?.href, pub: a.published}));
+  return {inj, form, pred, stats, leaders, series, news, weather: s.gameInfo?.weather, venue: s.gameInfo?.venue?.fullName || g.venue};
+}
+function favTeam(g){ const o = g.odds; if(!o) return null; if(o.favHome) return g.home; if(o.favAway) return g.away;
+  const v = num(o.spHome); if(!isNaN(v) && v !== 0) return v < 0 ? g.home : g.away;
+  const mh = num(o.mlHome), ma = num(o.mlAway); if(!isNaN(mh) && !isNaN(ma)) return mh < ma ? g.home : g.away; return null; }
+function movement(g){
+  const o = g.odds; if(!o) return null;
+  if(o.spHomeOpen && o.spHome && o.spHomeOpen !== o.spHome){
+    const toward = num(o.spHome) < num(o.spHomeOpen) ? g.home : g.away;
+    return `The spread has moved: ${esc(g.home.abbr)} opened at <b>${esc(o.spHomeOpen)}</b> and is now <b>${esc(o.spHome)}</b>, so the market has shifted toward <b>${esc(toward.short)}</b>.`;
+  }
+  if(o.mlHomeOpen && o.mlHome && o.mlHomeOpen !== o.mlHome){
+    const toward = num(o.mlHome) < num(o.mlHomeOpen) ? g.home : g.away;
+    return `The moneyline has moved: ${esc(g.home.abbr)} opened at <b>${esc(o.mlHomeOpen)}</b> and is now <b>${esc(o.mlHome)}</b>, a shift toward <b>${esc(toward.short)}</b>.`;
+  }
+  if(o.spHome) return `The spread hasn't moved since it opened (${esc(g.home.abbr)} ${esc(o.spHome)}).`;
+  return null;
+}
+const findKey = (st, re) => st && Object.keys(st).find(k => re.test(k));
+function totalLean(g, I){
+  const o = g.odds; if(!o || o.ou == null) return null;
+  const S = I.stats, re = /^(points per game|points|goals for per game|goals per game|goals|runs per game|runs)$/i, al = /points allowed|goals against|runs allowed/i;
+  const kH = findKey(S.home, re), kA = findKey(S.away, re);
+  if(!kH || !kA) return `The total (over/under) is set at <b>${esc(o.ou)}</b>${o.ouOpen && o.ouOpen != o.ou ? ` (opened at ${esc(o.ouOpen)})` : ''}.`;
+  let eh = num(S.home[kH]), ea = num(S.away[kA]);
+  const aH = findKey(S.home, al), aA = findKey(S.away, al);
+  if(aH && aA){ eh = (eh + num(S.away[aA])) / 2; ea = (ea + num(S.home[aH])) / 2; }
+  const exp = eh + ea; if(isNaN(exp)) return `The total is set at <b>${esc(o.ou)}</b>.`;
+  return `The total is <b>${esc(o.ou)}</b>${o.ouOpen && o.ouOpen != o.ou ? ` (opened ${esc(o.ouOpen)})` : ''}. Based on each team's scoring and what the other team usually allows, a typical game here lands around <b>${exp.toFixed(1)}</b>, which leans <b>${exp > num(o.ou) ? 'OVER' : 'UNDER'}</b>.`;
+}
+function formLine(f){ const w = f.games.filter(x => x.res === 'W').length; return `<b>${esc(f.team.short)}</b> is ${w}-${f.games.length - w} in its last ${f.games.length}`; }
+function injCounts(t){ const out = t.list.filter(i => /out|reserve|ir\b|suspend/i.test(i.status)).length; return `${esc(t.team.short)}: ${t.list.length} listed${out ? ` (${out} out)` : ''}`; }
+function matchupLines(g, I){
+  const S = I.stats; if(!S.home || !S.away) return [];
+  const pairs = [['Yards Passing','Pass Yards Allowed','passing'], ['Yards Rushing','Rush Yards Allowed','running'], ['Points Per Game','Points Allowed Per Game','scoring']];
+  const out = [];
+  for(const [off, def, kind] of pairs) for(const [O, D, so, sd] of [[g.away, g.home, S.away, S.home], [g.home, g.away, S.home, S.away]]){
+    const ov = num(so[off]), dv = num(sd[def]); if(isNaN(ov) || isNaN(dv)) continue;
+    out.push(`<b>${esc(O.short)}</b> ${kind} offense (${ov}/game) vs. <b>${esc(D.short)}</b> ${kind} defense (allows ${dv}): ` +
+      (ov > dv ? `<span class="edge">edge ${esc(O.abbr)} offense</span>` : `<span class="edge d">edge ${esc(D.abbr)} defense</span>`));
+  }
+  return out;
+}
+function quickTake(g, I){
+  const b = [], o = g.odds, fav = favTeam(g);
+  if(o){
+    if(fav){ const line = fav === g.home ? (o.spHome || o.mlHome) : (o.spAway || o.mlAway); b.push(`Sportsbooks favor <b>${esc(fav.short)}</b>${line ? ` (${esc(fav.abbr)} ${esc(line)})` : ''}.`); }
+    else if(o.details) b.push(`Line: <b>${esc(o.details)}</b>.`);
+    const mv = movement(g); if(mv) b.push(mv);
+    const tl = totalLean(g, I); if(tl) b.push(tl);
+  }
+  if(I.pred){ const t = I.pred.home >= I.pred.away ? g.home : g.away; b.push(`ESPN's matchup predictor gives <b>${esc(t.short)}</b> a <b>${Math.max(I.pred.home, I.pred.away).toFixed(1)}%</b> chance to win.`); }
+  if(I.form.length) b.push('Recent form: ' + I.form.map(formLine).join('; ') + '.');
+  if(I.series?.summary) b.push(`This season: ${esc(I.series.summary)}.`);
+  if(I.inj.length) b.push('Injury report: ' + I.inj.map(injCounts).join(' · ') + '.');
+  return b;
+}
+async function fetchH2H(sp, g){
+  if(h2hCache[g.id]) return h2hCache[g.id];
+  const urls = [BASE + sp.path + '/teams/' + g.home.id + '/schedule'];
+  if(sp.prev && g.season) urls.push(BASE + sp.path + '/teams/' + g.home.id + '/schedule?season=' + (g.season - 1));
+  const res = await Promise.allSettled(urls.map(getJSON)); const map = new Map();
+  res.forEach(r => { if(r.status !== 'fulfilled') return; (r.value.events || []).forEach(e => {
+    const c = e.competitions?.[0]; if(!c || String(e.id) === g.id || !c.status?.type?.completed) return;
+    if(!(c.competitors || []).some(x => String(x.team?.id) === String(g.away.id))) return;
+    map.set(e.id, {date: new Date(e.date), teams: c.competitors.map(x => ({abbr: x.team?.abbreviation, score: typeof x.score === 'object' ? x.score?.displayValue : x.score, win: x.winner, home: x.homeAway === 'home'}))});
+  }); });
+  const list = [...map.values()].sort((a,b) => b.date - a.date).slice(0, 8);
+  return h2hCache[g.id] = {list, seasons: urls.length};
+}
+function h2hSummary(g, h){
+  if(!h.list.length) return `No meetings between ${esc(g.away.short)} and ${esc(g.home.short)} found in the ${h.seasons > 1 ? 'last two seasons' : 'current season'}.`;
+  const aw = h.list.filter(m => m.teams.find(t => t.abbr === g.away.abbr)?.win).length, hw = h.list.filter(m => m.teams.find(t => t.abbr === g.home.abbr)?.win).length;
+  return `Last ${h.list.length} meeting${h.list.length > 1 ? 's' : ''}: <b>${esc(g.away.abbr)} ${aw}–${hw} ${esc(g.home.abbr)}</b>.`;
+}
+const h2hRow = m => { const a = m.teams.find(t => !t.home) || m.teams[0], h = m.teams.find(t => t.home) || m.teams[1];
+  return `<tr><td>${m.date.toLocaleDateString([], {month:'short', day:'numeric', year:'numeric'})}</td><td>${a.win ? '<b>' : ''}${esc(a.abbr)} ${esc(a.score)}${a.win ? '</b>' : ''} @ ${h.win ? '<b>' : ''}${esc(h.abbr)} ${esc(h.score)}${h.win ? '</b>' : ''}</td></tr>`; };
+
+// ================= Game screen =================
+function gameFromSummary(s, id){
+  const c = s.header?.competitions?.[0]; if(!c) return findCached(id);
+  const g = parseGame({id: s.header.id || id, date: c.date, status: c.status, season: s.header.season, competitions: [c]}) || findCached(id);
+  if(!g) return null;
+  const cached = findCached(id);
+  g.odds = parseOdds(s.pickcenter?.[0]) || cached?.odds || null;
+  g.tv = g.tv || cached?.tv || ''; g.season = g.season || cached?.season;
+  if(cached){ g.home.color = cached.home.color; g.away.color = cached.away.color; if(!g.home.record) g.home.record = cached.home.record; if(!g.away.record) g.away.record = cached.away.record; }
+  return g;
+}
+function oddsCard(g){
+  const o = g.odds;
+  if(!o) return `<div class="card"><h2>📈 Odds</h2><p class="muted">No odds posted for this game yet. Check back closer to game time.</p></div>`;
+  const cell = (now, open) => `<b>${esc(now ?? '–')}</b>${open && open !== now ? `<small class="mv">open ${esc(open)}</small>` : ''}`;
+  const tr = (t, sp, spo, tot, toto, ml, mlo) => `<tr><td><span class="tb sm" style="background:${esc(t.color)}">${esc(t.abbr)}</span> ${esc(t.short)}</td><td>${cell(sp, spo)}</td><td>${cell(tot, toto)}</td><td>${cell(ml, mlo)}</td></tr>`;
+  const mv = movement(g);
+  return `<div class="card"><h2>📈 Odds & line movement</h2>
+    <table><tr><th>Team</th><th>Spread</th><th>Total</th><th>Moneyline</th></tr>
+    ${tr(g.away, o.spAway, o.spAwayOpen, o.ou != null ? 'O ' + o.ou : null, o.ouOpen ? 'O ' + o.ouOpen : null, o.mlAway, o.mlAwayOpen)}
+    ${tr(g.home, o.spHome, o.spHomeOpen, o.ou != null ? 'U ' + o.ou : null, o.ouOpen ? 'U ' + o.ouOpen : null, o.mlHome, o.mlHomeOpen)}
+    ${o.draw ? `<tr><td>Draw</td><td></td><td></td><td><b>${esc(o.draw)}</b></td></tr>` : ''}</table>
+    ${mv ? `<div class="note">${mv}</div>` : ''}
+    <p class="muted" style="font-size:12px;margin:8px 0 0">Odds from ${esc(o.provider)} via ESPN · refreshes automatically every 30 seconds.</p></div>`;
+}
+async function renderGame(sp, id, silent){
+  const main = $('#main');
+  if(!silent) main.innerHTML = loading('Loading matchup…');
+  let s;
+  try { s = await getJSON(BASE + sp.path + '/summary?event=' + id); sumCache[id] = s; }
+  catch(e){ if(!silent) main.innerHTML = `<a class="back" href="#/${sp.key}">← All ${sp.label} games</a>` + errorBox(); return; }
+  if(route.gameId !== id) return;
+  const g = gameFromSummary(s, id);
+  if(!g){ main.innerHTML = `<a class="back" href="#/${sp.key}">← All ${sp.label} games</a><div class="card empty"><p>We couldn't find that game.</p></div>`; return; }
+  currentGame = g; updateChatContext();
+  const I = insights(g, s), take = quickTake(g, I), mu = matchupLines(g, I), live = g.state === 'in';
+  const H = g.home, A = g.away;
+  const statKeys = [...new Set([...Object.keys(I.stats.away || {}), ...Object.keys(I.stats.home || {})])];
+  const heroTeam = t => `<div><span class="tb" style="background:${esc(t.color)}">${esc(t.abbr)}</span><div class="nm">${esc(t.short)}</div><div class="muted" style="font-size:13px">${esc(t.record)}</div>${g.state !== 'pre' ? `<div class="sc">${esc(t.score ?? '')}</div>` : ''}</div>`;
+  const temp = I.weather?.temperature;
+  main.innerHTML = `<a class="back" href="#/${sp.key}">← All ${sp.label} games</a>
+  <div class="card"><div class="hero">${heroTeam(A)}<div class="mid">${live ? `<span class="live">● LIVE</span><br>${esc(g.detail)}` : g.state === 'pre' ? `${esc(fmtTime(g.date))}` : esc(g.detail)}<br><small>@</small></div>${heroTeam(H)}</div>
+    <div class="meta">${I.venue ? `<span>📍 ${esc(I.venue)}</span>` : ''}${g.tv ? `<span>📺 ${esc(g.tv)}</span>` : ''}${temp != null ? `<span>🌡️ ${esc(temp)}°F</span>` : ''}<span id="stamp">Updated ${clock(new Date())}</span></div></div>
+
+  ${oddsCard(g)}
+
+  ${I.pred ? `<div class="card"><h2>🎯 Win probability <small class="muted">(ESPN matchup predictor)</small></h2>
+    <div class="prob"><div style="width:${I.pred.away}%;background:${esc(A.color)}"></div><div style="width:${I.pred.home}%;background:${esc(H.color)}"></div></div>
+    <div class="row"><b>${esc(A.abbr)} ${I.pred.away.toFixed(1)}%</b><b>${esc(H.abbr)} ${I.pred.home.toFixed(1)}%</b></div></div>` : ''}
+
+  ${take.length ? `<div class="card"><h2>🧠 Quick take</h2><ul class="take">${take.map(t => `<li>${t}</li>`).join('')}</ul>
+    <p class="muted" style="font-size:12px;margin:6px 0 0">Written automatically from the live numbers on this page, not expert picks.</p>
+    <div class="askcta"><span>Got a question about this game?</span><button class="btn" onclick="openChat()">💬 Ask the assistant</button></div></div>` : ''}
+
+  ${mu.length || statKeys.length ? `<div class="card"><h2>🛡️ Matchup breakdown</h2>
+    ${mu.length ? `<ul class="take">${mu.map(t => `<li>${t}</li>`).join('')}</ul>` : ''}
+    ${statKeys.length ? `<h3>Season averages</h3><table><tr><th>Stat</th><th>${esc(A.abbr)}</th><th>${esc(H.abbr)}</th></tr>${statKeys.map(k => `<tr><td>${esc(k)}</td><td>${esc(I.stats.away?.[k] ?? '–')}</td><td>${esc(I.stats.home?.[k] ?? '–')}</td></tr>`).join('')}</table>` : ''}</div>` : ''}
+
+  <div class="two">
+    <div class="card"><h2>🔥 Recent form</h2>${I.form.length ? I.form.map(f => `<div><b>${esc(f.team.short)}</b> <span class="muted" style="font-size:13px">last ${f.games.length}</span>
+      <div class="form">${f.games.map(x => `<span class="wl ${esc(x.res)}" title="${esc(x.at + ' ' + x.opp + ' ' + x.score)}">${esc(x.res)}</span>`).join('')}</div>
+      <div class="flist">${f.games.map(x => `${esc(x.res)} ${esc(x.score)} ${esc(x.at)} ${esc(x.opp)}`).join(' · ')}</div></div>`).join('<hr style="border:0;border-top:1px solid #e5e7eb">') : '<p class="muted">No recent games yet.</p>'}</div>
+    <div class="card"><h2>🤝 Head-to-head</h2><div id="h2h"><p class="muted">Loading past meetings…</p></div></div>
+  </div>
+
+  <div class="card"><h2>🏥 Injury report</h2>${I.inj.length ? `<div class="two">${I.inj.map(t => `<div><h3>${esc(t.team.short)}</h3>${t.list.length ? t.list.map(i => `<div class="inj"><span><b>${esc(i.name)}</b> <span class="muted">${esc(i.pos)}</span><br><small class="muted">${esc(i.detail)}${i.ret ? ' · est. return ' + esc(new Date(i.ret).toLocaleDateString([], {month:'short', day:'numeric'})) : ''}</small></span>
+      <span class="st ${/out|reserve|ir\b|suspend/i.test(i.status) ? 'out' : 'q'}">${esc(i.status)}</span></div>`).join('') : '<p class="muted">No injuries reported.</p>'}</div>`).join('')}</div>` : '<p class="muted">No injuries reported for either team.</p>'}</div>
+
+  ${I.leaders.some(l => l.cats.length) ? `<div class="card"><h2>⭐ Key players</h2><div class="two">${I.leaders.filter(l => l.team).map(l => `<div><h3>${esc(l.team.short)}</h3>${l.cats.map(c => `<div class="inj"><span><b>${esc(c.who)}</b><br><small class="muted">${esc(c.cat)}</small></span><span style="text-align:right;font-size:13px">${esc(c.val)}</span></div>`).join('')}</div>`).join('')}</div></div>` : ''}
+
+  ${I.news.length ? `<div class="card news"><h2>📰 Latest news</h2>${I.news.map(a => `<a href="${esc(a.url || '#')}" target="_blank" rel="noopener"><b>${esc(a.h)}</b><span>${esc(a.d || '')}${a.pub ? ' · ' + ago(a.pub) : ''}</span></a>`).join('')}</div>` : ''}`;
+  try{
+    const h = await fetchH2H(sp, g); const el = $('#h2h');
+    if(el && route.gameId === id) el.innerHTML = `<p style="font-size:14px">${h2hSummary(g, h)}</p>${h.list.length ? `<table>${h.list.map(h2hRow).join('')}</table>` : ''}`;
+  }catch(e){ const el = $('#h2h'); if(el) el.innerHTML = '<p class="muted">Past meetings unavailable right now.</p>'; }
+}
+
+// ================= Chat assistant =================
+function updateChatContext(){
+  const sp = spBy(route.sport), el = $('#cctx'); if(!el) return;
+  el.textContent = route.gameId && currentGame ? `Asking about: ${currentGame.away.short} @ ${currentGame.home.short}` : `Asking about: ${sp.label}`;
+  renderSuggestions();
+}
+function suggestions(){
+  const sp = spBy(route.sport);
+  if(sp.type === 'golf') return ["Who's leading?", 'Top 10', 'When does it start?'];
+  if(sp.type === 'tennis') return ['Live matches', 'Upcoming matches', 'Recent results'];
+  if(route.gameId && currentGame) return ["Who's favored?", 'Any injuries?', 'Will it go over?', 'How have they played lately?', 'Head-to-head history', 'Defensive matchup', 'Key players', 'Has the line moved?'];
+  const gs = (cache[sp.key]?.games || []).filter(g => g.state !== 'post').sort((a,b) => a.date - b.date);
+  const s = ["What games are on today?"];
+  if(gs[0]) s.push(`${gs[0].home.short} injuries`, `Spread for ${gs[0].away.short} vs ${gs[0].home.short}`);
+  if(gs[1]) s.push(`Who wins ${gs[1].away.short} vs ${gs[1].home.short}?`);
+  return s;
+}
+function renderSuggestions(){ const el = $('#csugg'); if(el) el.innerHTML = suggestions().map(q => `<button type="button" onclick="sendChat(${esc(JSON.stringify(q))})">${esc(q)}</button>`).join(''); }
+function renderChat(){ const el = $('#cmsgs'); el.innerHTML = chatLog.map(m => `<div class="msg ${m.who}">${m.html}</div>`).join(''); el.scrollTop = el.scrollHeight; }
+function openChat(){
+  $('#chat').classList.add('open'); $('#askBtn').style.display = 'none'; updateChatContext();
+  if(!chatLog.length){ chatLog.push({who:'b', html:`Hi! I can answer questions about games using live data: odds and spreads, line movement, injuries, recent form, head-to-head results, defensive matchups and win chances.<br><br>Ask about the game you're viewing, or name a team, like <i>"Knicks injuries"</i>.`}); renderChat(); }
+  setTimeout(() => $('#chatInput').focus(), 50);
+}
+function closeChat(){ $('#chat').classList.remove('open'); $('#askBtn').style.display = ''; }
+$('#cform').addEventListener('submit', ev => { ev.preventDefault(); const v = $('#chatInput').value.trim(); if(v) sendChat(v); });
+async function sendChat(q){
+  $('#chatInput').value = '';
+  chatLog.push({who:'u', html: esc(q)}); chatLog.push({who:'b', html:'<span class="muted">Looking that up…</span>'}); renderChat();
+  let html; try { html = await answer(q); } catch(e){ html = "Sorry, I couldn't load that data just now. Please try again in a moment."; }
+  chatLog[chatLog.length - 1] = {who:'b', html}; renderChat(); renderSuggestions();
+}
+function teamWords(t){ return [t.name, t.short].filter(Boolean).map(s => s.toLowerCase()); }
+function teamIn(g, q){
+  for(const t of [g.home, g.away]){
+    if(teamWords(t).some(w => w.length > 2 && q.includes(w))) return t;
+    if(t.abbr && t.abbr.length >= 3 && new RegExp('\\b' + t.abbr.toLowerCase() + '\\b').test(q)) return t;
+  }
+  return null;
+}
+function findGame(games, q){
+  const hits = games.filter(g => teamIn(g, q));
+  if(!hits.length) return null;
+  const rank = g => (g.state === 'in' ? 0 : g.state === 'pre' ? 1 : 2) * 1e13 + Math.abs(g.date - Date.now());
+  return hits.sort((a,b) => rank(a) - rank(b))[0];
+}
+const has = (q, re) => re.test(q);
+
+async function answer(raw){
+  const q = ' ' + raw.toLowerCase() + ' ', sp = spBy(route.sport);
+  if(sp.type === 'golf') return golfAnswer(sp, q);
+  if(sp.type === 'tennis') return tennisAnswer(sp, q);
+  const data = await loadSport(sp).catch(() => cache[sp.key]);
+  let g = route.gameId ? currentGame : null, s = g ? sumCache[g.id] : null, switched = false;
+  const other = data ? findGame(data.games, q) : null;
+  if(other && (!g || (other.id !== g.id && !teamIn(g, q)))){ g = other; switched = true; s = sumCache[g.id] || (sumCache[g.id] = await getJSON(BASE + sp.path + '/summary?event=' + g.id)); g = gameFromSummary(s, g.id) || g; }
+  if(!g){
+    const gs = (data?.games || []).filter(x => x.state !== 'post').sort((a,b) => a.date - b.date);
+    if(has(q, /today|tonight|games|schedule|on now|upcoming|playing|slate|live/)){
+      if(!gs.length) return `There are no ${sp.label} games in the next 7 days. Try another sport tab.`;
+      const today = gs.filter(x => x.state === 'in' || sameDay(x.date, new Date())); const list = (today.length ? today : gs).slice(0, 10);
+      return `${today.length ? `Here's today's ${sp.label} slate` : `No ${sp.label} games today. Here's what's next`}:<ul>${list.map(x => `<li><a href="#/${sp.key}/g/${x.id}">${esc(x.away.short)} @ ${esc(x.home.short)}</a>: ${x.state === 'in' ? '<b class="live">LIVE</b> ' + esc(x.detail) : esc(fmtTime(x.date))}${x.odds?.details ? ' · ' + esc(x.odds.details) : ''}</li>`).join('')}</ul>`;
+    }
+    return `Which game do you mean? Name a team (for example <i>"${esc(gs[0]?.home.short || 'Bears')} injuries"</i>), or open a game and ask me about it. You can also ask <i>"What games are on today?"</i>`;
+  }
+  const I = insights(g, s || {}), H = g.home, A = g.away, o = g.odds;
+  const head = switched ? `<div class="ctxline">${esc(A.short)} @ ${esc(H.short)} · ${g.state === 'in' ? 'LIVE ' + esc(g.detail) : esc(g.state === 'pre' ? fmtTime(g.date) : g.detail)}</div>` : '';
+  const link = switched ? `<br><a href="#/${sp.key}/g/${g.id}">Open the full matchup →</a>` : '';
+  const focus = teamIn(g, q);
+  let body;
+
+  if(has(q, /injur|hurt|health|questionable|doubtful|out for|who.?s out|sidelined|status/)){
+    const teams = I.inj.filter(t => !focus || t.team === focus);
+    body = teams.length ? teams.map(t => `<b>${esc(t.team.short)}</b>: ${t.list.length ? `<ul>${t.list.slice(0, 8).map(i => `<li>${esc(i.name)} (${esc(i.pos)}): <b>${esc(i.status)}</b>${i.detail ? ', ' + esc(i.detail) : ''}</li>`).join('')}</ul>` : 'no injuries reported.<br>'}`).join('') : 'Neither team has anyone on the injury report right now.';
+  }
+  else if(has(q, /over|under|total|o\/u|points will|how many points|high.?scoring/)){
+    body = totalLean(g, I) || 'No over/under has been posted for this game yet.';
+  }
+  else if(has(q, /line move|moved|movement|opening|opened|sharp/)){
+    body = movement(g) || 'No line has been posted yet, so there\'s no movement to report.';
+  }
+  else if(has(q, /who.*win|predict|pick|chance|probab|should i|lean|confiden/)){
+    const fav = favTeam(g), parts = [];
+    if(I.pred){ const t = I.pred.home >= I.pred.away ? H : A; parts.push(`ESPN's matchup predictor gives <b>${esc(t.short)}</b> a <b>${Math.max(I.pred.home, I.pred.away).toFixed(1)}%</b> chance to win.`); }
+    if(fav) parts.push(`Sportsbooks favor <b>${esc(fav.short)}</b>${o?.details ? ` (${esc(o.details)})` : ''}.`);
+    if(I.form.length) parts.push(I.form.map(formLine).join('; ') + '.');
+    body = (parts.join(' ') || 'There isn\'t enough data posted yet to say who\'s favored.') + '<br><small class="muted">Based on the numbers, not a guarantee. Upsets happen!</small>';
+  }
+  else if(has(q, /spread|odds|line|favou?r|moneyline|\bml\b|underdog|dog\b|point/)){
+    if(!o) body = 'No odds have been posted for this game yet. Check back closer to game time.';
+    else { const fav = favTeam(g);
+      body = `${fav ? `<b>${esc(fav.short)}</b> ${fav === H ? 'are' : 'are'} favored.<br>` : ''}<ul>
+        <li>Spread: ${esc(A.abbr)} <b>${esc(o.spAway ?? '–')}</b> / ${esc(H.abbr)} <b>${esc(o.spHome ?? '–')}</b></li>
+        <li>Moneyline: ${esc(A.abbr)} <b>${esc(o.mlAway ?? '–')}</b> / ${esc(H.abbr)} <b>${esc(o.mlHome ?? '–')}</b>${o.draw ? ` / Draw <b>${esc(o.draw)}</b>` : ''}</li>
+        <li>Total: <b>${esc(o.ou ?? '–')}</b></li></ul>${movement(g) || ''}<br><small class="muted">From ${esc(o.provider)} via ESPN.</small>`; }
+  }
+  else if(has(q, /defen|offen|matchup|pass|rush|run game|running|secondary|front|stop|scor|allow/)){
+    const mu = matchupLines(g, I);
+    if(mu.length) body = `<ul>${mu.map(x => `<li>${x}</li>`).join('')}</ul><small class="muted">Compares each offense's season average with what the other defense usually allows.</small>`;
+    else { const keys = [...new Set([...Object.keys(I.stats.away || {}), ...Object.keys(I.stats.home || {})])].slice(0, 8);
+      body = keys.length ? `Season averages (${esc(A.abbr)} vs ${esc(H.abbr)}):<ul>${keys.map(k => `<li>${esc(k)}: ${esc(I.stats.away?.[k] ?? '–')} vs ${esc(I.stats.home?.[k] ?? '–')}</li>`).join('')}</ul>` : 'Detailed team stats aren\'t available for this game yet.'; }
+  }
+  else if(has(q, /head|h2h|history|histor|past|before|last time|series|met |meet|rivalry|vs\.? each|against each/)){
+    const h = await fetchH2H(sp, g);
+    body = h2hSummary(g, h) + (h.list.length ? `<ul>${h.list.slice(0, 5).map(m => { const a = m.teams.find(t => !t.home) || m.teams[0], hh = m.teams.find(t => t.home) || m.teams[1]; return `<li>${m.date.toLocaleDateString([], {month:'short', day:'numeric', year:'numeric'})}: ${esc(a.abbr)} ${esc(a.score)} @ ${esc(hh.abbr)} ${esc(hh.score)}</li>`; }).join('')}</ul>` : '') + (I.series?.summary ? `This season: ${esc(I.series.summary)}.` : '');
+  }
+  else if(has(q, /recent|lately|form|streak|last \d|last five|last 5|hot|cold|playing|perform|momentum|record/)){
+    const fs = I.form.filter(f => !focus || f.team === focus);
+    body = fs.length ? fs.map(f => `${formLine(f)}:<ul>${f.games.map(x => `<li>${esc(x.res)} ${esc(x.score)} ${esc(x.at)} ${esc(x.opp)}</li>`).join('')}</ul>`).join('') : 'No recent results available yet.';
+    body += `Records: ${esc(A.short)} ${esc(A.record || '–')}, ${esc(H.short)} ${esc(H.record || '–')}.`;
+  }
+  else if(has(q, /player|star|leader|best|watch out|who to watch|qb|quarterback|scorer/)){
+    const ls = I.leaders.filter(l => l.team && (!focus || l.team === focus) && l.cats.length);
+    body = ls.length ? ls.map(l => `<b>${esc(l.team.short)}</b>:<ul>${l.cats.map(c => `<li>${esc(c.who)}: ${esc(c.cat)} (${esc(c.val)})</li>`).join('')}</ul>`).join('') : 'Player leaders aren\'t available for this game yet.';
+  }
+  else if(has(q, /weather|where|stadium|arena|venue|when|what time|start|kick|tip|tv|channel|watch|stream/)){
+    body = `<ul><li>When: <b>${esc(g.state === 'pre' ? fmtTime(g.date) : g.detail)}</b></li>${I.venue ? `<li>Where: ${esc(I.venue)}</li>` : ''}${g.tv ? `<li>TV: ${esc(g.tv)}</li>` : ''}${I.weather?.temperature != null ? `<li>Weather: ${esc(I.weather.temperature)}°F</li>` : ''}</ul>`;
+  }
+  else if(has(q, /news|update|latest|headline|story|report/)){
+    body = I.news.length ? `Latest headlines:<ul>${I.news.slice(0, 4).map(a => `<li><a href="${esc(a.url || '#')}" target="_blank" rel="noopener">${esc(a.h)}</a></li>`).join('')}</ul>` : 'No game-specific news right now.';
+  }
+  else if(has(q, /score|winning|who.?s up|leading/)){
+    body = g.state === 'pre' ? `This game hasn't started yet. It starts ${esc(fmtTime(g.date))}.` : `${esc(A.short)} <b>${esc(A.score)}</b>, ${esc(H.short)} <b>${esc(H.score)}</b> (${esc(g.detail)}).`;
+  }
+  else {
+    const t = quickTake(g, I);
+    body = t.length ? `Here's the quick take:<ul>${t.map(x => `<li>${x}</li>`).join('')}</ul>You can also ask about injuries, the defensive matchup, head-to-head history or key players.` : 'I don\'t have much data on this game yet. Try asking about the odds, injuries or recent form.';
+  }
+  return head + body + link;
+}
+async function golfAnswer(sp, q){
+  const d = await loadSport(sp); const e = d.events[0];
+  if(!e) return `There's no ${sp.label} tournament on right now.`;
+  const c = e.competitions?.[0] || {}, state = e.status?.type?.state;
+  const ps = (c.competitors || []).slice().sort((a,b) => (a.order || 999) - (b.order || 999));
+  const sc = x => typeof x.score === 'object' ? x.score?.displayValue : x.score;
+  const player = ps.find(x => (x.athlete?.displayName || '').split(' ').some(w => w.length > 3 && q.includes(w.toLowerCase())));
+  if(player) return state === 'pre' ? `${esc(player.athlete.displayName)} is in the field at the ${esc(e.name)}. Play hasn't started yet.` : `${esc(player.athlete.displayName)} is <b>${esc(player.status?.position?.displayName || player.order)}</b> at <b>${esc(sc(player))}</b> at the ${esc(e.name)}.`;
+  if(has(q, /when|start|date|where/)) return `The <b>${esc(e.name)}</b> runs ${new Date(e.date).toLocaleDateString([], {month:'short', day:'numeric'})}${e.endDate ? ' – ' + new Date(e.endDate).toLocaleDateString([], {month:'short', day:'numeric'}) : ''}. Status: ${esc(e.status?.type?.detail || e.status?.type?.description)}.`;
+  if(state === 'pre') return `The <b>${esc(e.name)}</b> hasn't started yet, so there's no leaderboard. ${ps.length} players are in the field. Ask me about a specific player!`;
+  const n = has(q, /10/) ? 10 : 5;
+  return `Top ${n} at the <b>${esc(e.name)}</b>:<ul>${ps.slice(0, n).map(x => `<li>${esc(x.status?.position?.displayName || x.order)}. ${esc(x.athlete?.displayName)}: <b>${esc(sc(x))}</b></li>`).join('')}</ul>`;
+}
+async function tennisAnswer(sp, q){
+  const d = await loadSport(sp); const all = tennisMatches(d);
+  const pm = all.filter(m => m.p.some(x => x.name.split(' ').some(w => w.length > 3 && q.includes(w.toLowerCase()))));
+  const fmt = m => `<li>${esc(m.p.map(x => x.name + (x.sets ? ' (' + x.sets + ')' : '')).join(' vs '))} · ${esc(m.round)} · ${esc(m.state === 'pre' ? fmtTime(m.date) : m.detail)}</li>`;
+  if(pm.length) return `Matches for that player:<ul>${pm.slice(0, 5).map(fmt).join('')}</ul>`;
+  const pick = has(q, /live|now/) ? all.filter(m => m.state === 'in') : has(q, /upcoming|next|schedule|today/) ? all.filter(m => m.state === 'pre').sort((a,b) => a.date - b.date) : all.filter(m => m.state === 'post').sort((a,b) => b.date - a.date);
+  return pick.length ? `<ul>${pick.slice(0, 8).map(fmt).join('')}</ul>` : 'No matches in that category right now. Try "recent results" or name a player.';
+}
+
+// ================= Live auto-refresh =================
+setInterval(() => {
+  if(document.hidden) return;
+  const sp = spBy(route.sport);
+  if(route.gameId){ if(currentGame && currentGame.state !== 'post') renderGame(sp, route.gameId, true); }
+  else renderList(sp, true);
+}, 30000);
+
+onRoute();
+</script>
+</body>
+</html>
